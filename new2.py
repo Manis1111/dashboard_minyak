@@ -475,6 +475,10 @@ def main():
                         title="Cross-Correlation Function Heatmap",
                         labels=dict(x="Lag (Bulan)", y="Variabel Eksogen", color="Korelasi"),
                         color_continuous_scale="RdBu_r",
+                        zmin=-1,
+                        zmax=1,
+                        color_continuous_midpoint=0,  # Titik netral di 0
+                        text_auto='.2f',
                         aspect="auto"
                     )
                     
@@ -501,8 +505,8 @@ def main():
         # Model evaluation data - updated with new models
         models_data = {
             'Model': ['ARIMAX-GARCH', 'SVR', 'LSTM'],
-            'RMSE': [1348.69, 5145.36, 4833.33],
-            'MAPE': [5.36, 24.11, 22.77]
+            'RMSE': [1348.69, 6509.39, 4833.33],
+            'MAPE': [5.36, 30.01, 22.77]
         }
         
         df_models = pd.DataFrame(models_data)
@@ -639,15 +643,15 @@ def main():
         <div style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); padding: 1.5rem; border-radius: 10px; margin: 1rem 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             <h5 style="text-align: center; color: #34495e; margin-bottom: 1rem; font-weight: bold;">📊 Persamaan ARIMAX</h5>
             <div style="text-align: center; font-family: 'Courier New', monospace; font-size: 1rem; line-height: 2; background-color: white; padding: 1rem; border-radius: 8px; border: 2px solid #3498db;">
-                <strong>Harga MiGor<sub>t</sub></strong> = 3,8292 × Harga_CPO<sub>t-1</sub> - 0,1683 × Produksi_CPO<sub>t-4</sub> + 51,4981 × IGT<sub>t-1</sub><br>
-                + 0,8231 × Harga MiGor<sub>t-1</sub> - 0,6988 × Harga MiGor<sub>t-2</sub> - 1,2288 × ε<sub>t-1</sub> + 0,7789 × ε<sub>t-2</sub> + ε<sub>t</sub>
+                <strong>ΔHargaMiGor<sub>t</sub></strong> = 3,817 × Harga_CPO<sub>t-1</sub> - 0,075 × Produksi_CPO<sub>t-4</sub> + 51,295 × IGT<sub>t-1</sub><br>
+                + 0,817 × ΔHarga MiGor<sub>t-1</sub> - 0,711 × ΔHarga MiGor<sub>t-2</sub> - 1,217 × ε<sub>t-1</sub> + 0,777 × ε<sub>t-2</sub> + ε<sub>t</sub>
             </div>
         </div>
         
         <div style="background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%); padding: 1.5rem; border-radius: 10px; margin: 1rem 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             <h5 style="text-align: center; color: #2d3436; margin-bottom: 1rem; font-weight: bold;">📈 Persamaan GARCH</h5>
             <div style="text-align: center; font-family: 'Courier New', monospace; font-size: 1rem; line-height: 2; background-color: white; padding: 1rem; border-radius: 8px; border: 2px solid #e17055;">
-                <strong>σ<sub>t</sub><sup>2</sup></strong> = 44116 + 0,3273 × ε<sub>t-1</sub><sup>2</sup> + 0,5202 × σ<sub>t-1</sub><sup>2</sup>
+                <strong>h<sub>t</sub></strong> = 44184 + 0,347 × ε<sub>t-1</sub><sup>2</sup> + 0,505 × h<sub>t-1</sub>
             </div>
         </div>
         
@@ -656,16 +660,14 @@ def main():
             <div style="background-color: white; padding: 1rem; border-radius: 8px; border: 2px solid #74b9ff;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.9rem;">
                     <div>
-                        <p><strong>Harga MiGor<sub>t</sub></strong> = Harga minyak goreng pada periode t</p>
-                        <p><strong>Harga_CPO<sub>t-1</sub></strong> = Harga CPO internasional lag 1 bulan</p>
-                        <p><strong>Produksi_CPO<sub>t-4</sub></strong> = Produksi CPO nasional lag 4 bulan</p>
+                        <p><strong>ΔHargaMiGor<sub>t</sub></strong> = HargaMiGor<sub>t</sub> – HargaMiGor<sub>t–1</sub>
+                        <p><strong>HargaCPOInter<sub>t-1</sub></strong> = Harga CPO internasional lag 1 bulan</p>
+                        <p><strong>ProduksiCPO<sub>t-4</sub></strong> = Produksi CPO nasional lag 4 bulan</p>
                         <p><strong>IGT<sub>t-1</sub></strong> = Indeks Google Trends lag 1 bulan</p>
                     </div>
                     <div>
-                        <p><strong>ε<sub>t</sub></strong> = Error term (residual) pada periode t</p>
-                        <p><strong>σ<sub>t</sub><sup>2</sup></strong> = Conditional variance pada periode t</p>
-                        <p><strong>AR(1), AR(2)</strong> = Komponen autoregressive orde 1 dan 2</p>
-                        <p><strong>MA(1), MA(2)</strong> = Komponen moving average orde 1 dan 2</p>
+                        <p><strong>ε<sub>t</sub></strong> = Residual ARIMAX pada periode t</p>
+                        <p><strong>h<sub>t</sub></strong> = Varians kondisional pada periode t</p>
                     </div>
                 </div>
             </div>
@@ -846,7 +848,10 @@ def main():
             fig.update_layout(
                 title="Hasil Peramalan Model ARIMAX(2,1,2)-GARCH(1,1)",
                 xaxis_title="Waktu",
-                yaxis_title="Harga Minyak Goreng (Rupiah)",
+                yaxis=dict(
+                    title="Harga Minyak Goreng (Rupiah)",
+                    range=[0, None]
+                ),
                 height=600,
                 hovermode="x unified",
                 legend=dict(
@@ -858,7 +863,16 @@ def main():
                 ),
                 plot_bgcolor='white'
             )
-            
+
+            fig.add_trace(go.Scatter(
+                x=[forecast_data['Tanggal'].min()],
+                y=[0],
+                mode='markers',
+                marker=dict(color='rgba(0,0,0,0)'),
+                showlegend=False,
+                hoverinfo='skip'
+            ))
+
             st.plotly_chart(fig, use_container_width=True)
             
             # Summary statistics
@@ -915,9 +929,9 @@ def main():
             with col1:
                 harga_cpo_input = st.number_input("Harga CPO Sebulan yang Lalu (USD/MT)", min_value=300.0, max_value=2500.0, value=900.0, step=10.0)
             with col2:
-                produksi_cpo_input = st.number_input("Produksi CPO 4 Bulan yang Lalu (Ribu Ton)", min_value=2000.0, max_value=8000.0, value=4900.0, step=50.0)
+                produksi_cpo_input = st.number_input("Produksi CPO 4 Bulan yang Lalu (Ribu Ton)", min_value=500.0, max_value=8000.0, value=4000.0, step=200.0)
             with col3:
-                igt_input = st.number_input("IGT Sebulan yang Lalu", min_value=0, max_value=100, value=60, step=1)
+                igt_input = st.number_input("IGT Sebulan yang Lalu", min_value=0, max_value=100, value=20, step=1)
             
             submit_button = st.form_submit_button(label='🚀 Lakukan Peramalan', use_container_width=True)
 
@@ -940,12 +954,16 @@ def main():
                         y = df_model['Harga_Kemasan']
                         X = df_model[['Harga_CPO_lag1', 'Produksi_CPO_lag4', 'IGT_lag1']]
 
+                        train_size = int(len(df_model) * 0.8)
+                        y_train= y.iloc[:train_size]
+                        X_train= X.iloc[:train_size]
+
                         # 2. Latih model ARIMAX(2,1,2) pada seluruh data
-                        arimax_model = SARIMAX(endog=y, exog=X, order=(2, 1, 2))
+                        arimax_model = SARIMAX(endog=y_train, exog=X_train, order=(2, 1, 2), enforce_stationarity=False, enforce_invertibility=False)
                         arimax_result = arimax_model.fit(disp=False)
 
                         # 3. Latih model GARCH(1,1) pada residual ARIMAX
-                        residuals = arimax_result.resid
+                        residuals = arimax_result.resid[1:]
                         garch_model = arch_model(residuals, p=1, q=1, vol='GARCH', mean='Zero')
                         garch_result = garch_model.fit(disp="off")
 
