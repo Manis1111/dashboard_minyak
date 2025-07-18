@@ -146,7 +146,7 @@ def main():
                     avg_price = data['Harga_Kemasan'].mean()
                     st.markdown(f'''
                     <div class="metric-box">
-                        <h4>Harga Rata-rata</h4>
+                        <h4>Rata-rata Harga Migor</h4>
                         <h3>Rp {avg_price:,.0f}</h3>
                     </div>
                     ''', unsafe_allow_html=True)
