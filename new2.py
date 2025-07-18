@@ -554,13 +554,13 @@ def main():
             **📈 Model yang Dievaluasi:**
             - **ARIMAX-GARCH**: AutoRegressive Integrated Moving Average with eXogenous variables dengan tambahan GARCH
             - **SVR**: Support Vector Regression
-            - **LSTM**: Long Short-Term Memory Neural Network
+            - **LSTM**: Long Short-Term Memory
             """)
         
         with col2:
             st.markdown("""
             **🎛️ Hyperparameter Terbaik:**
-            - **SVR**: kernel polynomial, C=10, degree=2, epsilon=0.13
+            - **SVR**: kernel RBF, C=20, epsilon=0.02, gamma='auto'
             - **LSTM**: n_units=300, n_past=1, dropout=0.1, lr=0.01, batch_size=8
             """)
         
