@@ -13,7 +13,7 @@ warnings.filterwarnings('ignore')
 
 # Konfigurasi halaman
 st.set_page_config(
-    page_title="Dashboard Peramalan Harga Minyak Goreng Sawit",
+    page_title="Dashboard Peramalan Harga Minyak Goreng Sawit di Indonesia",
     page_icon="🌴",
     layout="wide"
 )
@@ -146,7 +146,7 @@ def main():
                     avg_price = data['Harga_Kemasan'].mean()
                     st.markdown(f'''
                     <div class="metric-box">
-                        <h4>Rata-rata Harga Migor</h4>
+                        <h4>Harga Rata-rata</h4>
                         <h3>Rp {avg_price:,.0f}</h3>
                     </div>
                     ''', unsafe_allow_html=True)
@@ -272,8 +272,9 @@ def main():
                     min_val = filtered_data[var_name].min()
                     max_val = filtered_data[var_name].max()
                     avg_val = filtered_data[var_name].mean()
+                    std_val = filtered_data[var_name].std()
                     
-                    col_a, col_b, col_c = st.columns(3)
+                    col_a, col_b, col_c, col_d = st.columns(4)
                     with col_a:
                         st.markdown(f'''
                         <div class="metric-box" style="padding: 0.25rem; margin: 0.1rem 0; line-height: 1.1;">
@@ -293,6 +294,13 @@ def main():
                         <div class="metric-box" style="padding: 0.25rem; margin: 0.1rem 0; line-height: 1.1;">
                             <div style="font-size: 0.75rem; margin: 0; line-height: 1; color: #666;">Rata-rata</div>
                             <div style="font-weight: bold; font-size: 0.9rem; margin: 0; line-height: 1;">{avg_val:,.0f}</div>
+                        </div>
+                        ''', unsafe_allow_html=True)
+                    with col_d: # Menambahkan kolom untuk standar deviasi
+                        st.markdown(f'''
+                        <div class="metric-box" style="padding: 0.25rem; margin: 0.1rem 0; line-height: 1.1;">
+                            <div style="font-size: 0.75rem; margin: 0; line-height: 1; color: #666;">Std Deviasi</div>
+                            <div style="font-weight: bold; font-size: 0.9rem; margin: 0; line-height: 1;">{std_val:,.0f}</div>
                         </div>
                         ''', unsafe_allow_html=True)
                 
@@ -332,8 +340,9 @@ def main():
                         min_val = filtered_data[var_name].min()
                         max_val = filtered_data[var_name].max()
                         avg_val = filtered_data[var_name].mean()
+                        std_val = filtered_data[var_name].std()
                         
-                        col_a, col_b, col_c = st.columns(3)
+                        col_a, col_b, col_c, col_d = st.columns(4)
                         with col_a:
                             st.markdown(f'''
                             <div class="metric-box" style="padding: 0.25rem; margin: 0.1rem 0; line-height: 1.1;">
@@ -355,6 +364,13 @@ def main():
                                 <div style="font-weight: bold; font-size: 0.9rem; margin: 0; line-height: 1;">{avg_val:,.0f}</div>
                             </div>
                             ''', unsafe_allow_html=True)
+                        with col_d: # Menambahkan kolom untuk standar deviasi
+                            st.markdown(f'''
+                            <div class="metric-box" style="padding: 0.25rem; margin: 0.1rem 0; line-height: 1.1;">
+                                <div style="font-size: 0.75rem; margin: 0; line-height: 1; color: #666;">Std Deviasi</div>
+                                <div style="font-weight: bold; font-size: 0.9rem; margin: 0; line-height: 1;">{std_val:,.0f}</div>
+                            </div>
+                            ''', unsafe_allow_html=True)
                 
                 # Remove separator between rows
                 if i + 2 < len(variable_list):
@@ -367,8 +383,23 @@ def main():
         if not data.empty:
             st.markdown('''
             <div class="info-panel">
-            <h4>Cross-Correlation Function (CCF)</h4>
-            <p>Analisis korelasi antar variabel pada berbagai lag untuk menentukan lag yang berpengaruh untuk dimasukkan ke dalam model.</p>
+                <h4 style="margin-bottom: 0.5rem;">📊 Cross-Correlation Function (CCF)</h4>
+                <p>
+                    <b>Cross-Correlation Function (CCF)</b> adalah metode untuk mengukur korelasi antara dua data deret waktu (<i>time series</i>) pada pergeseran waktu yang berbeda (disebut <i>lag</i>). Pada dasarnya, CCF menerapkan perhitungan Korelasi Pearson pada setiap lag untuk melihat seberapa kuat hubungan satu variabel dengan variabel lain di masa lalu atau masa depan.
+                </p>
+                <p>Perhitungan korelasi pada setiap lag menggunakan <b>Rumus Korelasi Pearson</b>:</p>
+            </div>
+            ''', unsafe_allow_html=True)
+
+            st.latex(r'''
+            r_{xy} = \frac{\sum_{i=1}^{n}(x_i - \bar{x})(y_i - \bar{y})}{\sqrt{\sum_{i=1}^{n}(x_i - \bar{x})^2}\sqrt{\sum_{i=1}^{n}(y_i - \bar{y})^2}}
+            ''')
+
+            st.markdown('''
+            <div class="info-panel">
+                <p style="margin-bottom: 0;">
+                    <b>Tujuan Utama:</b> Tujuan dari analisis CCF ini adalah untuk mengidentifikasi <b>lag (pergeseran bulan)</b> di mana setiap variabel eksogen (Harga CPO, Produksi CPO, Indeks Google) memiliki korelasi tertinggi terhadap harga minyak goreng sawit. Lag dengan korelasi tertinggi inilah yang akan digunakan sebagai fitur dalam model peramalan untuk meningkatkan akurasi prediksi.
+                </p>
             </div>
             ''', unsafe_allow_html=True)
             
@@ -462,17 +493,24 @@ def main():
                                 else:
                                     # Highlight max values
                                     if col in max_positions and lag == max_positions[col]:
-                                        st.markdown(f'<div style="background-color: #90EE90; padding: 0.2rem; border-radius: 4px; font-weight: bold; text-align: center;">{value:.4f}</div>', unsafe_allow_html=True)
+                                        st.markdown(f'<div style="background-color: #D4EDDA; padding: 0.2rem; border-radius: 4px; font-weight: bold; text-align: center;">{value:.4f}</div>', unsafe_allow_html=True)
                                     else:
                                         st.markdown(f'<div style="text-align: center;">{value:.4f}</div>', unsafe_allow_html=True)
-                
+                    # Add legend below the table
+                    st.markdown('''
+                    <p style="font-weight: bold; margin-bottom: 0.25rem;">Legenda:</p>
+                    <div style="margin-top: 1rem; display: flex; align-items: center; font-size: 0.9rem;">
+                        <div style="width: 20px; height: 20px; background-color: #D4EDDA; border: 1px solid #ccc; margin-right: 10px;"></div>
+                        <span><b>Lag dengan Korelasi tertinggi<b> per variabel Terhadap Harga Minyak Goreng Sawit</span>
+                    </div>
+                    ''', unsafe_allow_html=True)
                 else:  # Heatmap
                     # Heatmap
                     st.markdown("##### Heatmap Korelasi")
                     
                     fig = px.imshow(
                         ccf_pivot.T,
-                        title="Cross-Correlation Function Heatmap",
+                        title="Korelasi Lag Variabel Eksogen Terhadap Harga Minyak Goreng Sawit",
                         labels=dict(x="Lag (Bulan)", y="Variabel Eksogen", color="Korelasi"),
                         color_continuous_scale="RdBu_r",
                         zmin=-1,
@@ -483,7 +521,7 @@ def main():
                     )
                     
                     fig.update_layout(
-                        title_x=0.5,
+                        title_x=0.35,
                         width=800,
                         height=400
                     )
@@ -491,7 +529,7 @@ def main():
                     st.plotly_chart(fig, use_container_width=True)
                 
                 # Best lags
-                st.subheader("💡 Lag yang Paling Berpengaruh")
+                st.subheader("💡 Lag yang Memiliki Korelasi Tertinggi")
                 for col in ccf_pivot.columns:
                     if not ccf_pivot[col].isna().all():
                         max_abs_idx = ccf_pivot[col].abs().idxmax()
@@ -500,13 +538,13 @@ def main():
     
     # Tab Model
     with tab4:
-        st.header("🔮 Evaluasi Model")
+        st.header("🔮 Model Terbaik")
         
         # Model evaluation data - updated with new models
         models_data = {
             'Model': ['ARIMAX-GARCH', 'SVR', 'LSTM'],
-            'RMSE': [1348.69, 6509.39, 4833.33],
-            'MAPE': [5.36, 30.01, 22.77]
+            'RMSE': [1348.69, 6446.93, 4833.33],
+            'MAPE': [5.36, 30.15, 22.77]
         }
         
         df_models = pd.DataFrame(models_data)
@@ -547,22 +585,164 @@ def main():
         # Model details
         st.subheader("⚙️ Detail Model")
         
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns([2, 1])
         
         with col1:
             st.markdown("""
-            **📈 Model yang Dievaluasi:**
+            **📈 Model yang Dibandingkan:**
             - **ARIMAX-GARCH**: AutoRegressive Integrated Moving Average with eXogenous variables dengan tambahan GARCH
             - **SVR**: Support Vector Regression
             - **LSTM**: Long Short-Term Memory
             """)
-        
-        with col2:
+            
             st.markdown("""
             **🎛️ Hyperparameter Terbaik:**
-            - **SVR**: kernel RBF, C=20, epsilon=0.02, gamma='auto'
-            - **LSTM**: n_units=300, n_past=1, dropout=0.1, lr=0.01, batch_size=8
+            - **SVR**: kernel RBF, C=14, epsilon=0.13 , gamma=scale
+            - **LSTM**: n_units=300, n_past=1, dropout_rate=0.1, learning_rate=0.01, batch_size=8
             """)
+        
+        with col2:
+            st.markdown("**📋 Informasi Langkah-Langkah Pemodelan:**")
+            
+            # Buttons for step-by-step info
+            if st.button("📊 ARIMAX-GARCH", use_container_width=True):
+                st.session_state.show_arimax_steps = True
+                st.session_state.show_svr_steps = False
+                st.session_state.show_lstm_steps = False
+            
+            if st.button("🤖 SVR", use_container_width=True):
+                st.session_state.show_svr_steps = True
+                st.session_state.show_arimax_steps = False
+                st.session_state.show_lstm_steps = False
+            
+            if st.button("🧠 LSTM", use_container_width=True):
+                st.session_state.show_lstm_steps = True
+                st.session_state.show_arimax_steps = False
+                st.session_state.show_svr_steps = False
+            
+            if st.button("❌ Sembunyikan", use_container_width=True):
+                st.session_state.show_arimax_steps = False
+                st.session_state.show_svr_steps = False
+                st.session_state.show_lstm_steps = False
+        
+        # Display step-by-step information based on button clicks
+        if hasattr(st.session_state, 'show_arimax_steps') and st.session_state.show_arimax_steps:
+            st.markdown("---")
+            st.subheader("📊 Langkah-Langkah ARIMAX-GARCH")
+            
+            # Data Splitting
+            st.markdown('''
+            <div class="info-panel">
+                <h5>🔄 Langkah 1: Data Splitting</h5>
+                <p>Data dibagi menjadi data training (80%) untuk model belajar dan testing (20%) untuk evaluasi model.</p>
+            </div>
+            ''', unsafe_allow_html=True)
+            
+            # ARIMAX Steps
+            st.markdown('''
+            <div class="info-panel">
+                <h5>📈 Langkah 2: Pemodelan ARIMAX</h5>
+                <ul>
+                    <li><strong>Uji Stasioner:</strong> Melakukan uji stasioneritas pada data</li>
+                    <li><strong>Differencing:</strong> Jika data tidak stasioner, lakukan differencing</li>
+                    <li><strong>Identifikasi Model:</strong> Gunakan plot ACF & PACF untuk menentukan ordo</li>
+                    <li><strong>Pemodelan:</strong> Coba beberapa kombinasi ordo potensial</li>
+                    <li><strong>Pilih Model Terbaik:</strong> Berdasarkan nilai AIC terkecil</li>
+                    <li><strong>Uji Ljung-Box:</strong> Pastikan residual adalah white noise</li>
+                    <li><strong>Evaluasi:</strong> Jika residual white noise, lanjut ke GARCH</li>
+                </ul>
+            </div>
+            ''', unsafe_allow_html=True)
+            
+            # GARCH Steps  
+            st.markdown('''
+            <div class="info-panel">
+                <h5>📊 Langkah 3: Pemodelan GARCH</h5>
+                <ul>
+                    <li><strong>Residual ARIMAX:</strong> Ambil residual dari model ARIMAX</li>
+                    <li><strong>Uji ARCH-LM:</strong> Test heteroskedastisitas pada residual</li>
+                    <li><strong>Pemodelan Varians Kondisional Redisual ARIMAX:</strong> Jika terdapat heteroskedastisitas, buat model GARCH</li>
+                    <li><strong>Standarisasi Residual:</strong> Hitung v<sub>t</sub> = e<sub>t</sub>/(h<sub>t</sub>)<sup>0.5</sup></li>
+                    <li><strong>Uji ARCH-LM:</strong> Test heteroskedastisitas pada residual yang distandarisasi</li>
+                    <li><strong>Uji Normalitas:</strong> Cek apakah standarisasi residual berdistribusi normal</li>
+                    <li><strong>Confidence Interval:</strong> Buat interval kepercayaan untuk peramalan</li>
+                </ul>
+            </div>
+            ''', unsafe_allow_html=True)
+        
+        if hasattr(st.session_state, 'show_svr_steps') and st.session_state.show_svr_steps:
+            st.markdown("---")
+            st.subheader("🤖 Langkah-Langkah SVR")
+            
+            # Data Splitting
+            st.markdown('''
+            <div class="info-panel">
+                <h5>🔄 Langkah 1: Data Splitting</h5>
+                <p>Data dibagi menjadi data training (80%) untuk model belajar dan testing (20%) untuk evaluasi model.</p>
+            </div>
+            ''', unsafe_allow_html=True)
+            
+            # SVR Steps
+            st.markdown('''
+            <div class="info-panel">
+                <h5>🤖 Langkah 2-5: Pemodelan SVR</h5>
+                <ul>
+                    <li><strong>Langkah 2 - Standarisasi Data:</strong> Normalisasi menggunakan Min-Max Scaler untuk meningkatkan performa model</li>
+                    <li><strong>Langkah 3 - Tuning Hyperparameter:</strong> Optimasi parameter menggunakan Grid Search:
+                        <ul>
+                            <li>Kernel: RBF, Polynomial, Linear</li>
+                            <li>C: Mengatur seberapa besar model boleh membuat kesalahan saat belajar</li>
+                            <li>Epsilon: Batas kesalahan yang masih dianggap wajar dalam prediksi</li>
+                            <li>Gamma: Mengatur seberapa jauh pengaruh satu titik data dalam model (khusus untuk RBF)</li>
+                            <li>Degree: Menentukan derajat pada kernel Polynomial</li>
+                        </ul>
+                    </li>
+                    <li><strong>Langkah 3 - Pemodelan:</strong> Training model SVR dengan hyperparameter terbaik</li>
+                    <li><strong>Langkah 4 - Transformasi Balik Data:</strong> Transformasi balik hasil peramalan ke skala asli</li>
+                    <li><strong>Langkah 5 - Evaluasi Model:</strong> Hitung RMSE dan MAPE pada data testing</li>
+                </ul>
+            </div>
+            ''', unsafe_allow_html=True)
+        
+        if hasattr(st.session_state, 'show_lstm_steps') and st.session_state.show_lstm_steps:
+            st.markdown("---")
+            st.subheader("🧠 Langkah-Langkah LSTM")
+            
+            # Data Splitting
+            st.markdown('''
+            <div class="info-panel">
+                <h5>🔄 Langkah 1: Data Splitting</h5>
+                <p>Data dibagi menjadi data training (80%) untuk model belajar dan testing (20%) untuk evaluasi model.</p>
+            </div>
+            ''', unsafe_allow_html=True)
+            
+            # LSTM Steps
+            st.markdown('''
+            <div class="info-panel">
+                <h5>🧠 Langkah 2-5: Pemodelan LSTM</h5>
+                <ul>
+                    <li><strong>Langkah 2 - Standarisasi Data:</strong> Normalisasi menggunakan Min-Max Scaler untuk stabilitas training</li>
+                    <li><strong>Langkah 3 - Tuning Hyperparameter:</strong> Optimasi parameter menggunakan Grid Search:
+                        <ul>
+                            <li>n_units: Jumlah neuron dalam layer LSTM</li>
+                            <li>timesteps: Jumlah data sebelumnya yang digunakan untuk memprediksi nilai berikutnya</li>
+                            <li>dropout_rate: Persentase neuron yang dinonaktifkan sementara untuk mencegah overfitting</li>
+                            <li>learning_rate: Seberapa cepat model belajar dari kesalahan</li>
+                            <li>batch_size: Jumlah data yang diproses sekaligus dalam satu putaran pelatihan</li>
+                        </ul>
+                    </li>
+                    <li><strong>Langkah 4 - Pemodelan:</strong> Training model LSTM dengan arsitektur neural network:
+                        <ul>
+                            <li>LSTM Layer dengan n_units neuron</li>
+                            <li>Dropout Layer untuk mencegah overfitting</li>
+                            <li>Dense Layer untuk output</li>
+                        </ul>
+                    </li>
+                    <li><strong>Langkah 5 - Transformasi Balik Data:</strong> Transformasi balik hasil peramalan ke skala asli</li>
+                    <li><strong>Langkah 6 - Evaluasi Model:</strong> Hitung RMSE dan MAPE pada data testing</li>
+                </ul>
+            </div>
+            ''', unsafe_allow_html=True)
         
         # Performance visualization options
         st.subheader("📊 Visualisasi Performa Model")
@@ -580,10 +760,12 @@ def main():
             
             # Highlight best values
             def highlight_best_model(s):
-                if s.name == 'RMSE':
-                    return ['background-color: #90EE90; font-weight: bold' if v == s.min() else '' for v in s]
+                if s.name == 'Model':
+                    return ['background-color: #D4EDDA; font-weight: bold' if v == 'ARIMAX-GARCH' else '' for v in s] 
+                elif s.name == 'RMSE':
+                    return ['background-color: #D4EDDA; font-weight: bold' if v == s.min() else '' for v in s]
                 elif s.name == 'MAPE':
-                    return ['background-color: #90EE90; font-weight: bold' if v == s.min() else '' for v in s]
+                    return ['background-color: #D4EDDA; font-weight: bold' if v == s.min() else '' for v in s]
                 return ['' for _ in s]
             
             styled_df = df_models.style.apply(highlight_best_model).format({
@@ -595,7 +777,7 @@ def main():
             
             st.markdown("""
             **Legenda:**
-            - 🟢 **Hijau**: Nilai terbaik untuk setiap metrik
+            - 🟢 **Hijau**: Model Dengan Metrik Evaluasi Terbaik
             - **RMSE**: Root Mean Squared Error (semakin rendah semakin baik)
             - **MAPE**: Mean Absolute Percentage Error (semakin rendah semakin baik)
             """)
@@ -632,49 +814,66 @@ def main():
         
         st.info("🏆 **ARIMAX(2,1,2)-GARCH(1,1)** menjadi model terbaik dengan RMSE terendah 1348.69 dan MAPE terendah 5.36%. Model ini menggabungkan kemampuan ARIMAX dalam memodelkan pola temporal dengan GARCH untuk memodelkan volatilitas yang berubah-ubah.")
     
-    # Tab Hasil Peramalan
-    with tab5:
-        st.header("📊 Hasil Peramalan Model ARIMAX-GARCH")
         
-        st.markdown('''
-        <div class="info-panel">
-        <h4 style="text-align: center; color: #2c3e50; margin-bottom: 1.5rem;">📈 Persamaan Model ARIMAX(2,1,2)-GARCH(1,1)</h4>
+        # Equation button at the bottom
+        st.markdown("---")
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col1:
+            if st.button("📐 Lihat Persamaan ARIMAX(2,1,2)-GARCH(1,1)", use_container_width=True):
+                st.session_state.show_arimax_equation = True
+                st.session_state.show_arimax_steps = False
+                st.session_state.show_svr_steps = False
+                st.session_state.show_lstm_steps = False
         
-        <div style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); padding: 1.5rem; border-radius: 10px; margin: 1rem 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            <h5 style="text-align: center; color: #34495e; margin-bottom: 1rem; font-weight: bold;">📊 Persamaan ARIMAX</h5>
-            <div style="text-align: center; font-family: 'Courier New', monospace; font-size: 1rem; line-height: 2; background-color: white; padding: 1rem; border-radius: 8px; border: 2px solid #3498db;">
-                <strong>ΔHargaMiGor<sub>t</sub></strong> = 3,817 × Harga_CPO<sub>t-1</sub> - 0,075 × Produksi_CPO<sub>t-4</sub> + 51,295 × IGT<sub>t-1</sub><br>
-                + 0,817 × ΔHarga MiGor<sub>t-1</sub> - 0,711 × ΔHarga MiGor<sub>t-2</sub> - 1,217 × ε<sub>t-1</sub> + 0,777 × ε<sub>t-2</sub> + ε<sub>t</sub>
+        with col3:
+            if st.button("❌ Sembunyikan Persamaan", use_container_width=True):
+                st.session_state.show_arimax_equation = False
+        
+        # Display equation at the bottom
+        if hasattr(st.session_state, 'show_arimax_equation') and st.session_state.show_arimax_equation:
+            st.markdown('''
+            <div class="info-panel">
+            <h4 style="text-align: center; color: #2c3e50; margin-bottom: 1.5rem;">📈 Persamaan Model ARIMAX(2,1,2)-GARCH(1,1)</h4>
+            
+            <div style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); padding: 1.5rem; border-radius: 10px; margin: 1rem 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <h5 style="text-align: center; color: #34495e; margin-bottom: 1rem; font-weight: bold;">📊 Persamaan ARIMAX</h5>
+                <div style="text-align: center; font-family: 'Courier New', monospace; font-size: 1rem; line-height: 2; background-color: white; padding: 1rem; border-radius: 8px; border: 2px solid #3498db;">
+                    <strong>ΔHargaMiGor<sub>t</sub></strong> = 3,817 × Harga_CPO<sub>t-1</sub> - 0,075 × Produksi_CPO<sub>t-4</sub> + 51,295 × IGT<sub>t-1</sub><br>
+                    + 0,817 × ΔHarga MiGor<sub>t-1</sub> - 0,711 × ΔHarga MiGor<sub>t-2</sub> - 1,217 × ε<sub>t-1</sub> + 0,777 × ε<sub>t-2</sub>
+                </div>
             </div>
-        </div>
-        
-        <div style="background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%); padding: 1.5rem; border-radius: 10px; margin: 1rem 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            <h5 style="text-align: center; color: #2d3436; margin-bottom: 1rem; font-weight: bold;">📈 Persamaan GARCH</h5>
-            <div style="text-align: center; font-family: 'Courier New', monospace; font-size: 1rem; line-height: 2; background-color: white; padding: 1rem; border-radius: 8px; border: 2px solid #e17055;">
-                <strong>h<sub>t</sub></strong> = 44184 + 0,347 × ε<sub>t-1</sub><sup>2</sup> + 0,505 × h<sub>t-1</sub>
+            
+            <div style="background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%); padding: 1.5rem; border-radius: 10px; margin: 1rem 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <h5 style="text-align: center; color: #2d3436; margin-bottom: 1rem; font-weight: bold;">📈 Persamaan GARCH</h5>
+                <div style="text-align: center; font-family: 'Courier New', monospace; font-size: 1rem; line-height: 2; background-color: white; padding: 1rem; border-radius: 8px; border: 2px solid #e17055;">
+                    <strong>h<sub>t</sub></strong> = 44184 + 0,347 × ε<sub>t-1</sub><sup>2</sup> + 0,505 × h<sub>t-1</sub>
+                </div>
             </div>
-        </div>
-        
-        <div style="background: linear-gradient(135deg, #dfe6e9 0%, #b2bec3 100%); padding: 1.5rem; border-radius: 10px; margin: 1rem 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            <h5 style="text-align: center; color: #2d3436; margin-bottom: 1rem; font-weight: bold;">📝 Keterangan</h5>
-            <div style="background-color: white; padding: 1rem; border-radius: 8px; border: 2px solid #74b9ff;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.9rem;">
-                    <div>
-                        <p><strong>ΔHargaMiGor<sub>t</sub></strong> = HargaMiGor<sub>t</sub> – HargaMiGor<sub>t–1</sub>
-                        <p><strong>HargaCPOInter<sub>t-1</sub></strong> = Harga CPO internasional lag 1 bulan</p>
-                        <p><strong>ProduksiCPO<sub>t-4</sub></strong> = Produksi CPO nasional lag 4 bulan</p>
-                        <p><strong>IGT<sub>t-1</sub></strong> = Indeks Google Trends lag 1 bulan</p>
-                    </div>
-                    <div>
-                        <p><strong>ε<sub>t</sub></strong> = Residual ARIMAX pada periode t</p>
-                        <p><strong>h<sub>t</sub></strong> = Varians kondisional pada periode t</p>
+            
+            <div style="background: linear-gradient(135deg, #dfe6e9 0%, #b2bec3 100%); padding: 1.5rem; border-radius: 10px; margin: 1rem 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <h5 style="text-align: center; color: #2d3436; margin-bottom: 1rem; font-weight: bold;">📝 Keterangan</h5>
+                <div style="background-color: white; padding: 1rem; border-radius: 8px; border: 2px solid #74b9ff;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.9rem;">
+                        <div>
+                            <p><strong>ΔHargaMiGor<sub>t</sub></strong> = HargaMiGor<sub>t</sub> – HargaMiGor<sub>t–1</sub>
+                            <p><strong>HargaCPOInter<sub>t-1</sub></strong> = Harga CPO internasional lag 1 bulan</p>
+                            <p><strong>ProduksiCPO<sub>t-4</sub></strong> = Produksi CPO nasional lag 4 bulan</p>
+                            <p><strong>IGT<sub>t-1</sub></strong> = Indeks Google Trends lag 1 bulan</p>
+                        </div>
+                        <div>
+                            <p><strong>ε<sub>t</sub></strong> = Residual ARIMAX pada periode t</p>
+                            <p><strong>h<sub>t</sub></strong> = Varians kondisional dari residual ARIMAX pada periode t</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        </div>
-        ''', unsafe_allow_html=True)
-        
+            </div>
+            ''', unsafe_allow_html=True)
+
+    # Tab Hasil Peramalan
+    with tab5:
+        st.header("📊 Hasil Peramalan Model ARIMAX-GARCH")
+
         # Load forecast results data
         @st.cache_data
         def load_forecast_data():
@@ -726,194 +925,276 @@ def main():
         forecast_data = load_forecast_data()
         
         if not forecast_data.empty:
-            # Create the comprehensive forecast plot
-            fig = go.Figure()
+
+            # Add dropdown for visualization choice
+            col1, col2 = st.columns([1, 3])
+            with col1:
+                viz_option = st.selectbox(
+                    "Pilih tampilan:",
+                    ["📊 Visualisasi", "📋 Tabel Data"]
+                )
             
-            # Add actual data
-            actual_mask = ~forecast_data['Aktual'].isna()
-            if actual_mask.any():
-                fig.add_trace(go.Scatter(
-                    x=forecast_data.loc[actual_mask, 'Tanggal'],
-                    y=forecast_data.loc[actual_mask, 'Aktual'],
-                    mode='lines',
-                    name='Aktual',
-                    line=dict(color='#000000', width=2),
-                    hovertemplate="<b>Aktual</b><br>Tanggal: %{x}<br>Harga: Rp %{y:,.0f}<extra></extra>"
-                ))
-            
-            # Add fitted training data
-            fitted_mask = ~forecast_data['Fitted_Train'].isna()
-            if fitted_mask.any():
-                fig.add_trace(go.Scatter(
-                    x=forecast_data.loc[fitted_mask, 'Tanggal'],
-                    y=forecast_data.loc[fitted_mask, 'Fitted_Train'],
-                    mode='lines',
-                    name='Fitted (Train)',
-                    line=dict(color='#0000FF', width=2, dash='dash'),
-                    hovertemplate="<b>Fitted (Train)</b><br>Tanggal: %{x}<br>Harga: Rp %{y:,.0f}<extra></extra>"
-                ))
-            
-            # Add forecast test data
-            test_mask = ~forecast_data['Forecast_Test'].isna()
-            if test_mask.any():
-                fig.add_trace(go.Scatter(
-                    x=forecast_data.loc[test_mask, 'Tanggal'],
-                    y=forecast_data.loc[test_mask, 'Forecast_Test'],
-                    mode='lines',
-                    name='Forecast (Test)',
-                    line=dict(color='#008000', width=2, dash='dash'),
-                    hovertemplate="<b>Forecast (Test)</b><br>Tanggal: %{x}<br>Harga: Rp %{y:,.0f}<extra></extra>"
-                ))
-            
-            # Add forecast 2025
-            forecast_2025_mask = ~forecast_data['Forecast_2025'].isna()
-            if forecast_2025_mask.any():
-                fig.add_trace(go.Scatter(
-                    x=forecast_data.loc[forecast_2025_mask, 'Tanggal'],
-                    y=forecast_data.loc[forecast_2025_mask, 'Forecast_2025'],
-                    mode='lines',
-                    name='Forecast 2025',
-                    line=dict(color='#FFA500', width=3, dash='dash'),
-                    hovertemplate="<b>Forecast 2025</b><br>Tanggal: %{x}<br>Harga: Rp %{y:,.0f}<extra></extra>"
-                ))
+            if viz_option == "📊 Visualisasi":
+                # Create the comprehensive forecast plot
+                fig = go.Figure()
                 
-                # Add confidence interval for 2025 forecast
-                batas_mask = ~forecast_data['Batas_Atas'].isna() & ~forecast_data['Batas_Bawah'].isna()
-                if batas_mask.any():
-                    # Upper bound
+                # Add actual data
+                actual_mask = ~forecast_data['Aktual'].isna()
+                if actual_mask.any():
                     fig.add_trace(go.Scatter(
-                        x=forecast_data.loc[batas_mask, 'Tanggal'],
-                        y=forecast_data.loc[batas_mask, 'Batas_Atas'],
+                        x=forecast_data.loc[actual_mask, 'Tanggal'],
+                        y=forecast_data.loc[actual_mask, 'Aktual'],
                         mode='lines',
-                        name='Batas Atas',
-                        line=dict(color='#808080', width=1, dash='dot'),
-                        hovertemplate="<b>Batas Atas</b><br>Tanggal: %{x}<br>Harga: Rp %{y:,.0f}<extra></extra>"
+                        name='Aktual',
+                        line=dict(color='#000000', width=2),
+                        hovertemplate="<b>Aktual</b><br>Tanggal: %{x}<br>Harga: Rp %{y:,.0f}<extra></extra>"
+                    ))
+                
+                # Add fitted training data
+                fitted_mask = ~forecast_data['Fitted_Train'].isna()
+                if fitted_mask.any():
+                    fig.add_trace(go.Scatter(
+                        x=forecast_data.loc[fitted_mask, 'Tanggal'],
+                        y=forecast_data.loc[fitted_mask, 'Fitted_Train'],
+                        mode='lines',
+                        name='Fitted (Train)',
+                        line=dict(color='#0000FF', width=2, dash='dash'),
+                        hovertemplate="<b>Fitted (Train)</b><br>Tanggal: %{x}<br>Harga: Rp %{y:,.0f}<extra></extra>"
+                    ))
+                
+                # Add forecast test data
+                test_mask = ~forecast_data['Forecast_Test'].isna()
+                if test_mask.any():
+                    fig.add_trace(go.Scatter(
+                        x=forecast_data.loc[test_mask, 'Tanggal'],
+                        y=forecast_data.loc[test_mask, 'Forecast_Test'],
+                        mode='lines',
+                        name='Peramalan (Test)',
+                        line=dict(color='#008000', width=2, dash='dash'),
+                        hovertemplate="<b>Forecast (Test)</b><br>Tanggal: %{x}<br>Harga: Rp %{y:,.0f}<extra></extra>"
+                    ))
+                
+                # Add forecast 2025
+                forecast_2025_mask = ~forecast_data['Forecast_2025'].isna()
+                if forecast_2025_mask.any():
+                    fig.add_trace(go.Scatter(
+                        x=forecast_data.loc[forecast_2025_mask, 'Tanggal'],
+                        y=forecast_data.loc[forecast_2025_mask, 'Forecast_2025'],
+                        mode='lines',
+                        name='Peramalan 2025',
+                        line=dict(color='#FFA500', width=3, dash='dash'),
+                        hovertemplate="<b>Forecast 2025</b><br>Tanggal: %{x}<br>Harga: Rp %{y:,.0f}<extra></extra>"
                     ))
                     
-                    # Lower bound
-                    fig.add_trace(go.Scatter(
-                        x=forecast_data.loc[batas_mask, 'Tanggal'],
-                        y=forecast_data.loc[batas_mask, 'Batas_Bawah'],
-                        mode='lines',
-                        name='Batas Bawah',
-                        line=dict(color='#808080', width=1, dash='dot'),
-                        fill='tonexty',
-                        fillcolor='rgba(128,128,128,0.2)',
-                        hovertemplate="<b>Batas Bawah</b><br>Tanggal: %{x}<br>Harga: Rp %{y:,.0f}<extra></extra>"
-                    ))
-            
-            # Add vertical lines to separate periods
-            train_end = pd.to_datetime('2022-05-01')
-            test_end = pd.to_datetime('2024-12-01')
-            forecast_start = pd.to_datetime('2025-01-01')
-            
-            # Training period background
-            fig.add_vrect(
-                x0=forecast_data['Tanggal'].min(),
-                x1=train_end,
-                fillcolor="rgba(128,128,128,0.1)",
-                layer="below",
-                line_width=0,
-                annotation_text="Training",
-                annotation_position="top left"
-            )
-            
-            # Testing period background
-            fig.add_vrect(
-                x0=train_end,
-                x1=test_end,
-                fillcolor="rgba(0,0,255,0.1)",
-                layer="below",
-                line_width=0,
-                annotation_text="Testing",
-                annotation_position="top left"
-            )
-            
-            # Forecasting period background
-            fig.add_vrect(
-                x0=forecast_start,
-                x1=forecast_data['Tanggal'].max(),
-                fillcolor="rgba(255,165,0,0.1)",
-                layer="below",
-                line_width=0,
-                annotation_text="Forecasting 2025",
-                annotation_position="top left"
-            )
-            
-            # Add vertical separator lines
-            fig.add_vline(x=train_end, line_dash="dot", line_color="red", line_width=2)
-            fig.add_vline(x=forecast_start, line_dash="dot", line_color="red", line_width=2)
-            
-            # Update layout
-            fig.update_layout(
-                title="Hasil Peramalan Model ARIMAX(2,1,2)-GARCH(1,1)",
-                xaxis_title="Waktu",
-                yaxis=dict(
-                    title="Harga Minyak Goreng (Rupiah)",
-                    range=[0, None]
-                ),
-                height=600,
-                hovermode="x unified",
-                legend=dict(
-                    orientation="h",
-                    yanchor="bottom",
-                    y=1.02,
-                    xanchor="right",
-                    x=1
-                ),
-                plot_bgcolor='white'
-            )
-
-            fig.add_trace(go.Scatter(
-                x=[forecast_data['Tanggal'].min()],
-                y=[0],
-                mode='markers',
-                marker=dict(color='rgba(0,0,0,0)'),
-                showlegend=False,
-                hoverinfo='skip'
-            ))
-
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # Summary statistics
-            st.subheader("📊 Ringkasan Hasil Peramalan")
-            
-            if forecast_2025_mask.any():
-                avg_forecast_2025 = forecast_data.loc[forecast_2025_mask, 'Forecast_2025'].mean()
+                    # Add confidence interval for 2025 forecast
+                    batas_mask = ~forecast_data['Batas_Atas'].isna() & ~forecast_data['Batas_Bawah'].isna()
+                    if batas_mask.any():
+                        # Add the confidence interval as a filled area
+                        fig.add_trace(go.Scatter(
+                            x=forecast_data.loc[batas_mask, 'Tanggal'],
+                            y=forecast_data.loc[batas_mask, 'Batas_Atas'],
+                            mode='lines',
+                            line=dict(color='rgba(128,128,128,0)'),
+                            showlegend=False,
+                            hoverinfo='skip'
+                        ))
+                        
+                        fig.add_trace(go.Scatter(
+                            x=forecast_data.loc[batas_mask, 'Tanggal'],
+                            y=forecast_data.loc[batas_mask, 'Batas_Bawah'],
+                            mode='lines',
+                            line=dict(color='rgba(128,128,128,0)'),
+                            fill='tonexty',
+                            fillcolor='rgba(128,128,128,0.2)',
+                            name='Pita Keyakinan 95%',
+                            hovertemplate="<b>Pita Keyakinan 95%</b><br>Tanggal: %{x}<br>Batas Atas: " + 
+                                        forecast_data.loc[batas_mask, 'Batas_Atas'].apply(lambda x: f"Rp {x:,.0f}").astype(str) + 
+                                        "<br>Batas Bawah: %{y:,.0f}<extra></extra>"
+                        ))
                 
-                col1, col2 = st.columns([1, 2])
+                # Add vertical lines to separate periods
+                train_end = pd.to_datetime('2022-05-01')
+                test_end = pd.to_datetime('2024-12-01')
+                forecast_start = pd.to_datetime('2025-01-01')
                 
+                # Training period background
+                fig.add_vrect(
+                    x0=forecast_data['Tanggal'].min(),
+                    x1=train_end,
+                    fillcolor="rgba(128,128,128,0.1)",
+                    layer="below",
+                    line_width=0,
+                    annotation_text="Training",
+                    annotation_position="top left"
+                )
+                
+                # Testing period background
+                fig.add_vrect(
+                    x0=train_end,
+                    x1=test_end,
+                    fillcolor="rgba(0,0,255,0.1)",
+                    layer="below",
+                    line_width=0,
+                    annotation_text="Testing",
+                    annotation_position="top left"
+                )
+                
+                # Forecasting period background
+                fig.add_vrect(
+                    x0=forecast_start,
+                    x1=forecast_data['Tanggal'].max(),
+                    fillcolor="rgba(255,165,0,0.1)",
+                    layer="below",
+                    line_width=0,
+                    annotation_text="Peramalan 2025",
+                    annotation_position="top left"
+                )
+                
+                # Add vertical separator lines
+                fig.add_vline(x=train_end, line_dash="dot", line_color="red", line_width=2)
+                fig.add_vline(x=forecast_start, line_dash="dot", line_color="red", line_width=2)
+                
+                # Update layout
+                fig.update_layout(
+                    title="Hasil Peramalan Model ARIMAX(2,1,2)-GARCH(1,1)",
+                    xaxis_title="Waktu",
+                    yaxis=dict(
+                        title="Harga Minyak Goreng (Rupiah)",
+                        range=[0, None]
+                    ),
+                    height=600,
+                    hovermode="x unified",
+                    legend=dict(
+                        orientation="h",
+                        yanchor="bottom",
+                        y=1.02,
+                        xanchor="right",
+                        x=1
+                    ),
+                    plot_bgcolor='white'
+                )
+
+                fig.add_trace(go.Scatter(
+                    x=[forecast_data['Tanggal'].min()],
+                    y=[0],
+                    mode='markers',
+                    marker=dict(color='rgba(0,0,0,0)'),
+                    showlegend=False,
+                    hoverinfo='skip'
+                ))
+
+                st.plotly_chart(fig, use_container_width=True)
+                
+
+                # Period explanations
+                st.markdown("---")
+                st.markdown("""
+                **📋 Legenda:**
+                - **Area Abu-abu (Training):** Periode pelatihan model menggunakan data historis untuk mempelajari pola
+                - **Area Biru (Testing):** Periode pengujian model pada data yang belum pernah dilihat untuk validasi
+                - **Area Oranye (Peramalan):** Periode peramalan untuk tahun 2025 berdasarkan pola yang dipelajari
+                - **Garis Putus-putus Merah:** Pemisah antar periode (Training-Testing dan Testing-2025)
+                - **Area Abu-abu Transparan:** Interval kepercayaan peramalan 95%
+                """)
+
+                # Summary statistics
+                st.subheader("📊 Ringkasan Hasil Peramalan")
+                
+                if forecast_2025_mask.any():
+                    avg_forecast_2025 = forecast_data.loc[forecast_2025_mask, 'Forecast_2025'].mean()
+                    
+                    col1, col2 = st.columns([1, 2])
+                    
+                    with col1:
+                        st.markdown(f'''
+                        <div class="metric-box">
+                            <div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 0.2rem; padding: 5; line-height: 1;">Rata-rata Peramalan 2025</div>
+                            <div style="font-size: 2.5rem; font-weight: bold; margin: 0.1rem 0; padding: 5; line-height: 0.9;">Rp {avg_forecast_2025:,.0f}</div>
+                            <div style="font-size: 1.1rem; color: #666; margin-top: 0.1rem; padding: 0; line-height: 1;">per liter per bulan</div>
+                        </div>
+                        ''', unsafe_allow_html=True)
+                    
+                    with col2:
+                        st.markdown(f'''
+                        <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #28a745;">
+                            <p style="text-align: justify; line-height: 1.6; margin: 0;">
+                            Berdasarkan hasil peramalan menggunakan model ARIMAX(2,1,2)-GARCH(1,1), 
+                            prediksi harga minyak goreng sawit untuk tahun 2025 menunjukkan rata-rata sebesar 
+                            <strong>Rp {avg_forecast_2025:,.0f} per liter per bulan</strong>. Model ini telah memperhitungkan 
+                            pengaruh variabel eksogen seperti harga CPO internasional, produksi CPO nasional, 
+                            dan indeks Google Trends, serta volatilitas harga yang dinamis melalui komponen GARCH.
+                            </p>
+                        </div>
+                        ''', unsafe_allow_html=True)
+
+
+            else:  # Tabel Data
+                st.markdown("##### 📋 Tabel Data Hasil Peramalan")
+                
+                # Date filter for table
+                col1, col2 = st.columns(2)
                 with col1:
-                    st.markdown(f'''
-                    <div class="metric-box">
-                        <h4>Rata-rata Peramalan 2025</h4>
-                        <h3>Rp {avg_forecast_2025:,.0f}</h3>
-                    </div>
-                    ''', unsafe_allow_html=True)
-                
+                    start_date_table = st.date_input(
+                        "📅 Dari", 
+                        forecast_data['Tanggal'].min(),
+                        min_value=forecast_data['Tanggal'].min().date(),
+                        max_value=forecast_data['Tanggal'].max().date(),
+                        key="table_start_tab5"
+                    )
                 with col2:
-                    st.markdown(f'''
-                    <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #28a745;">
-                        <p style="text-align: justify; line-height: 1.6; margin: 0;">
-                        Berdasarkan hasil peramalan menggunakan model ARIMAX(2,1,2)-GARCH(1,1), 
-                        prediksi harga minyak goreng sawit untuk tahun 2025 menunjukkan rata-rata sebesar 
-                        <strong>Rp {avg_forecast_2025:,.0f}</strong> per liter. Model ini telah memperhitungkan 
-                        pengaruh variabel eksogen seperti harga CPO internasional, produksi CPO nasional, 
-                        dan indeks Google Trends, serta volatilitas harga yang dinamis melalui komponen GARCH.
-                        </p>
-                    </div>
-                    ''', unsafe_allow_html=True)
+                    end_date_table = st.date_input(
+                        "📅 Sampai", 
+                        forecast_data['Tanggal'].max(),
+                        min_value=forecast_data['Tanggal'].min().date(),
+                        max_value=forecast_data['Tanggal'].max().date(),
+                        key="table_end_tab5"
+                    )
+                
+                # Filter data based on date selection
+                filtered_forecast_data = forecast_data[
+                    (forecast_data['Tanggal'] >= pd.Timestamp(start_date_table)) & 
+                    (forecast_data['Tanggal'] <= pd.Timestamp(end_date_table))
+                ]
+                
+                # Create table data
+                table_data = filtered_forecast_data[['Tanggal']].copy()
+                
+                # Add Harga Aktual
+                table_data['Harga Aktual'] = filtered_forecast_data['Aktual']
+                
+                # Merge Fitted, Forecast Test, and Forecast 2025 into Hasil Peramalan
+                table_data['Hasil Peramalan'] = filtered_forecast_data['Fitted_Train'].fillna(
+                    filtered_forecast_data['Forecast_Test'].fillna(filtered_forecast_data['Forecast_2025'])
+                )
+                
+                # Add confidence interval bounds (only for forecast periods)
+                table_data['Batas Bawah (95%)'] = filtered_forecast_data['Batas_Bawah']
+                table_data['Batas Atas (95%)'] = filtered_forecast_data['Batas_Atas']
+                
+                # Format tanggal untuk display
+                table_data['Periode'] = table_data['Tanggal'].dt.strftime('%b %Y')
+                
+                # Reorder columns
+                display_data = table_data[['Periode', 'Harga Aktual', 'Hasil Peramalan', 'Batas Bawah (95%)', 'Batas Atas (95%)']].copy()
+                
+                # Format numbers to remove decimals for display
+                for col in ['Harga Aktual', 'Hasil Peramalan', 'Batas Bawah (95%)', 'Batas Atas (95%)']:
+                    display_data[col] = display_data[col].apply(lambda x: f"{x:,.0f}" if pd.notna(x) else "-")
+                
+                # Display table
+                st.dataframe(display_data, use_container_width=True, hide_index=True)
+                
+                # Download button
+                csv_data = table_data[['Periode', 'Harga Aktual', 'Hasil Peramalan', 'Batas Bawah (95%)', 'Batas Atas (95%)']]
+                csv = csv_data.to_csv(index=False)
+                st.download_button(
+                    "📥 Download Tabel CSV", 
+                    csv, 
+                    f"hasil_peramalan_{datetime.now().strftime('%Y%m%d')}.csv", 
+                    "text/csv"
+                )
             
-            # Period explanations
-            st.markdown("---")
-            st.markdown("""
-            **📋 Penjelasan Periode:**
-            - **Area Abu-abu (Training):** Periode pelatihan model menggunakan data historis untuk mempelajari pola
-            - **Area Biru (Testing):** Periode pengujian model pada data yang belum pernah dilihat untuk validasi
-            - **Area Oranye (Forecasting):** Periode peramalan untuk tahun 2025 berdasarkan pola yang dipelajari
-            - **Garis Putus-putus Merah:** Pemisah antar periode (Training-Testing dan Testing-Forecasting)
-            - **Area Abu-abu Transparan:** Interval kepercayaan peramalan 95%
-            """)
+            
         
         else:
             st.error("❌ Data hasil peramalan tidak dapat dimuat.")
@@ -997,7 +1278,7 @@ def main():
                         col2.metric("Batas Bawah (95%)", f"Rp {lower_bound:,.0f}")
                         col3.metric("Batas Atas (95%)", f"Rp {upper_bound:,.0f}")
                         
-                        st.info(f"Berdasarkan model, harga minyak goreng untuk **periode berikutnya** diprediksi berada di angka **Rp {predicted_price:,.0f}**, dengan rentang kemungkinan antara Rp {lower_bound:,.0f} dan Rp {upper_bound:,.0f}.")
+                        st.info(f"Berdasarkan model, harga minyak goreng untuk **periode berikutnya** diprediksi berada di angka **Rp {predicted_price:,.0f}**, dengan rentang kemungkinan antara **Rp {lower_bound:,.0f}** hingga **Rp {upper_bound:,.0f}** pada tingkat kepercayaan 95%.")
 
                     except Exception as e:
                         st.error(f"Terjadi kesalahan saat melatih model atau melakukan peramalan: {e}")
