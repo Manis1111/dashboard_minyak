@@ -838,8 +838,8 @@ def main():
             <div style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); padding: 1.5rem; border-radius: 10px; margin: 1rem 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                 <h5 style="text-align: center; color: #34495e; margin-bottom: 1rem; font-weight: bold;">📊 Persamaan ARIMAX</h5>
                 <div style="text-align: center; font-family: 'Courier New', monospace; font-size: 1rem; line-height: 2; background-color: white; padding: 1rem; border-radius: 8px; border: 2px solid #3498db;">
-                    <strong>ΔHargaMiGor<sub>t</sub></strong> = 3,817 × Harga_CPO<sub>t-1</sub> - 0,075 × Produksi_CPO<sub>t-4</sub> + 51,295 × IGT<sub>t-1</sub><br>
-                    + 0,817 × ΔHarga MiGor<sub>t-1</sub> - 0,711 × ΔHarga MiGor<sub>t-2</sub> - 1,217 × ε<sub>t-1</sub> + 0,777 × ε<sub>t-2</sub>
+                    <strong>HargaMiGor'<sub>t</sub></strong> = 3,817 × Harga_CPO<sub>t-1</sub> - 0,075 × Produksi_CPO<sub>t-4</sub> + 51,295 × IGT<sub>t-1</sub><br>
+                    + 0,817 × HargaMiGor'<sub>t-1</sub> - 0,711 × HargaMiGor'<sub>t-2</sub> - 1,217 × ε<sub>t-1</sub> + 0,777 × ε<sub>t-2</sub>
                 </div>
             </div>
             
@@ -855,7 +855,7 @@ def main():
                 <div style="background-color: white; padding: 1rem; border-radius: 8px; border: 2px solid #74b9ff;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.9rem;">
                         <div>
-                            <p><strong>ΔHargaMiGor<sub>t</sub></strong> = HargaMiGor<sub>t</sub> – HargaMiGor<sub>t–1</sub>
+                            <p><strong>HargaMiGor'<sub>t</sub></strong> = HargaMiGor<sub>t</sub> – HargaMiGor<sub>t–1</sub>
                             <p><strong>HargaCPOInter<sub>t-1</sub></strong> = Harga CPO internasional lag 1 bulan</p>
                             <p><strong>ProduksiCPO<sub>t-4</sub></strong> = Produksi CPO nasional lag 4 bulan</p>
                             <p><strong>IGT<sub>t-1</sub></strong> = Indeks Google Trends lag 1 bulan</p>
