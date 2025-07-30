@@ -88,7 +88,7 @@ def get_correlation_interpretation(corr_val):
 
 def main():
     # Header
-    st.markdown('<h1 class="main-title">🌴 Dashboard Peramalan Harga Minyak Goreng Sawit</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-title">🌴 Dashboard Peramalan Harga Minyak Goreng Sawit di Indonesia</h1>', unsafe_allow_html=True)
     
     # Data loader
     @st.cache_data
