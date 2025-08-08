@@ -886,44 +886,53 @@ def main():
     # Tab Hasil Peramalan
     with tab5:
         st.header("📊 Hasil Peramalan Model ARIMAX-GARCH")
-
+    
         # Load forecast results data
         @st.cache_data
         def load_forecast_data():
             try:
-                import pandas as pd
+                # Membaca data dari file excel
                 data = pd.read_excel("hasil_plot_semua.xlsx")
                 
-                # Clean column names
-                data.columns = ['Tanggal', 'Aktual', 'Fitted_Train', 'Forecast_Test', 'Forecast_2025', 'Batas_Atas', 'Batas_Bawah']
+                # --- PERUBAHAN 1: Nama kolom disesuaikan ---
+                # Kolom 'Fitted_Train', 'Forecast_Test', 'Forecast_2025' digabung menjadi 'Peramalan'
+                data.columns = ['Tanggal', 'Aktual', 'Peramalan', 'Batas_Atas', 'Batas_Bawah']
                 
-                # Convert date column
+                # Mengonversi kolom Tanggal ke format datetime
                 data['Tanggal'] = pd.to_datetime(data['Tanggal'])
                 
                 return data
-            except:
-                st.warning("File hasil_plot_semua.xlsx tidak ditemukan. Menggunakan data contoh.")
-                
-                return none
-        
+            except FileNotFoundError:
+                st.warning("File hasil_plot_semua.xlsx tidak ditemukan. Pastikan file berada di direktori yang sama.")
+                return None
+            except Exception as e:
+                st.error(f"Terjadi kesalahan saat memuat data: {e}")
+                return None
+    
         forecast_data = load_forecast_data()
         
-        if not forecast_data.empty:
-
+        if forecast_data is not None and not forecast_data.empty:
+    
             # Add dropdown for visualization choice
             col1, col2 = st.columns([1, 3])
             with col1:
                 viz_option = st.selectbox(
                     "Pilih tampilan:",
-                    ["📊 Visualisasi", "📋 Tabel Data"]
+                    ["📊 Visualisasi", "📋 Tabel Data"],
+                    key="viz_option_tab5"
                 )
             
+            # --- PERUBAHAN 2: Logika Visualisasi Disesuaikan ---
             if viz_option == "📊 Visualisasi":
-                # Create the comprehensive forecast plot
                 fig = go.Figure()
                 
-                # Add actual data
-                actual_mask = ~forecast_data['Aktual'].isna()
+                # Definisikan tanggal pemisah periode
+                train_end = pd.to_datetime('2022-05-01')
+                test_end = pd.to_datetime('2024-12-01')
+                forecast_start = pd.to_datetime('2025-01-01')
+    
+                # Add actual data (tidak berubah)
+                actual_mask = forecast_data['Aktual'].notna()
                 if actual_mask.any():
                     fig.add_trace(go.Scatter(
                         x=forecast_data.loc[actual_mask, 'Tanggal'],
@@ -931,110 +940,76 @@ def main():
                         mode='lines',
                         name='Aktual',
                         line=dict(color='#000000', width=2),
-                        hovertemplate="<b>Aktual</b><br>Tanggal: %{x}<br>Harga: Rp %{y:,.0f}<extra></extra>"
+                        hovertemplate="<b>Aktual</b><br>Tanggal: %{x|%b %Y}<br>Harga: Rp %{y:,.0f}<extra></extra>"
                     ))
                 
-                # Add fitted training data
-                fitted_mask = ~forecast_data['Fitted_Train'].isna()
-                if fitted_mask.any():
+                # Buat mask untuk setiap periode
+                train_mask = (forecast_data['Tanggal'] <= train_end) & forecast_data['Peramalan'].notna()
+                test_mask = (forecast_data['Tanggal'] > train_end) & (forecast_data['Tanggal'] < forecast_start) & forecast_data['Peramalan'].notna()
+                forecast_2025_mask = (forecast_data['Tanggal'] >= forecast_start) & forecast_data['Peramalan'].notna()
+    
+                # Add fitted training data from 'Peramalan' column
+                if train_mask.any():
                     fig.add_trace(go.Scatter(
-                        x=forecast_data.loc[fitted_mask, 'Tanggal'],
-                        y=forecast_data.loc[fitted_mask, 'Fitted_Train'],
+                        x=forecast_data.loc[train_mask, 'Tanggal'],
+                        y=forecast_data.loc[train_mask, 'Peramalan'],
                         mode='lines',
                         name='Fitted (Train)',
                         line=dict(color='#0000FF', width=2, dash='dash'),
-                        hovertemplate="<b>Fitted (Train)</b><br>Tanggal: %{x}<br>Harga: Rp %{y:,.0f}<extra></extra>"
+                        hovertemplate="<b>Fitted (Train)</b><br>Tanggal: %{x|%b %Y}<br>Harga: Rp %{y:,.0f}<extra></extra>"
                     ))
-                
-                # Add forecast test data
-                test_mask = ~forecast_data['Forecast_Test'].isna()
+    
+                # Add forecast test data from 'Peramalan' column
                 if test_mask.any():
                     fig.add_trace(go.Scatter(
                         x=forecast_data.loc[test_mask, 'Tanggal'],
-                        y=forecast_data.loc[test_mask, 'Forecast_Test'],
+                        y=forecast_data.loc[test_mask, 'Peramalan'],
                         mode='lines',
                         name='Peramalan (Test)',
                         line=dict(color='#008000', width=2, dash='dash'),
-                        hovertemplate="<b>Forecast (Test)</b><br>Tanggal: %{x}<br>Harga: Rp %{y:,.0f}<extra></extra>"
+                        hovertemplate="<b>Forecast (Test)</b><br>Tanggal: %{x|%b %Y}<br>Harga: Rp %{y:,.0f}<extra></extra>"
                     ))
-                
-                # Add forecast 2025
-                forecast_2025_mask = ~forecast_data['Forecast_2025'].isna()
+    
+                # Add forecast 2025 from 'Peramalan' column
                 if forecast_2025_mask.any():
                     fig.add_trace(go.Scatter(
                         x=forecast_data.loc[forecast_2025_mask, 'Tanggal'],
-                        y=forecast_data.loc[forecast_2025_mask, 'Forecast_2025'],
+                        y=forecast_data.loc[forecast_2025_mask, 'Peramalan'],
                         mode='lines',
                         name='Peramalan 2025',
                         line=dict(color='#FFA500', width=3, dash='dash'),
-                        hovertemplate="<b>Forecast 2025</b><br>Tanggal: %{x}<br>Harga: Rp %{y:,.0f}<extra></extra>"
+                        hovertemplate="<b>Forecast 2025</b><br>Tanggal: %{x|%b %Y}<br>Harga: Rp %{y:,.0f}<extra></extra>"
                     ))
-                    
-                    # Add confidence interval for 2025 forecast
-                    batas_mask = ~forecast_data['Batas_Atas'].isna() & ~forecast_data['Batas_Bawah'].isna()
-                    if batas_mask.any():
-                        # Add the confidence interval as a filled area
-                        fig.add_trace(go.Scatter(
-                            x=forecast_data.loc[batas_mask, 'Tanggal'],
-                            y=forecast_data.loc[batas_mask, 'Batas_Atas'],
-                            mode='lines',
-                            line=dict(color='rgba(128,128,128,0)'),
-                            showlegend=False,
-                            hoverinfo='skip'
-                        ))
-                        
-                        fig.add_trace(go.Scatter(
-                            x=forecast_data.loc[batas_mask, 'Tanggal'],
-                            y=forecast_data.loc[batas_mask, 'Batas_Bawah'],
-                            mode='lines',
-                            line=dict(color='rgba(128,128,128,0)'),
-                            fill='tonexty',
-                            fillcolor='rgba(128,128,128,0.2)',
-                            name='Pita Keyakinan 95%',
-                            hovertemplate="<b>Pita Keyakinan 95%</b><br>Tanggal: %{x}<br>Batas Atas: " + 
-                                        forecast_data.loc[batas_mask, 'Batas_Atas'].apply(lambda x: f"Rp {x:,.0f}").astype(str) + 
-                                        "<br>Batas Bawah: %{y:,.0f}<extra></extra>"
-                        ))
                 
-                # Add vertical lines to separate periods
-                train_end = pd.to_datetime('2022-05-01')
-                test_end = pd.to_datetime('2024-12-01')
-                forecast_start = pd.to_datetime('2025-01-01')
-                
-                # Training period background
-                fig.add_vrect(
-                    x0=forecast_data['Tanggal'].min(),
-                    x1=train_end,
-                    fillcolor="rgba(128,128,128,0.1)",
-                    layer="below",
-                    line_width=0,
-                    annotation_text="Training",
-                    annotation_position="top left"
-                )
-                
-                # Testing period background
-                fig.add_vrect(
-                    x0=train_end,
-                    x1=test_end,
-                    fillcolor="rgba(0,0,255,0.1)",
-                    layer="below",
-                    line_width=0,
-                    annotation_text="Testing",
-                    annotation_position="top left"
-                )
-                
-                # Forecasting period background
-                fig.add_vrect(
-                    x0=forecast_start,
-                    x1=forecast_data['Tanggal'].max(),
-                    fillcolor="rgba(255,165,0,0.1)",
-                    layer="below",
-                    line_width=0,
-                    annotation_text="Peramalan 2025",
-                    annotation_position="top left"
-                )
-                
-                # Add vertical separator lines
+                # Add confidence interval for 2025 forecast (tidak berubah)
+                batas_mask = forecast_data['Batas_Atas'].notna() & forecast_data['Batas_Bawah'].notna()
+                if batas_mask.any():
+                    # Upper bound (invisible line)
+                    fig.add_trace(go.Scatter(
+                        x=forecast_data.loc[batas_mask, 'Tanggal'],
+                        y=forecast_data.loc[batas_mask, 'Batas_Atas'],
+                        mode='lines',
+                        line=dict(color='rgba(128,128,128,0)'),
+                        showlegend=False,
+                        hoverinfo='skip'
+                    ))
+                    # Lower bound (visible line) with fill to the upper bound
+                    fig.add_trace(go.Scatter(
+                        x=forecast_data.loc[batas_mask, 'Tanggal'],
+                        y=forecast_data.loc[batas_mask, 'Batas_Bawah'],
+                        mode='lines',
+                        line=dict(color='rgba(128,128,128,0)'),
+                        fill='tonexty',
+                        fillcolor='rgba(128,128,128,0.2)',
+                        name='Pita Keyakinan 95%',
+                        hovertemplate="<b>Pita Keyakinan</b><br>Tanggal: %{x|%b %Y}<br>Batas Atas: Rp %{customdata:,.0f}<br>Batas Bawah: Rp %{y:,.0f}<extra></extra>",
+                        customdata=forecast_data.loc[batas_mask, 'Batas_Atas']
+                    ))
+    
+                # --- Latar belakang dan garis pemisah (tidak ada perubahan signifikan) ---
+                fig.add_vrect(x0=forecast_data['Tanggal'].min(), x1=train_end, fillcolor="rgba(128,128,128,0.1)", layer="below", line_width=0, annotation_text="Training", annotation_position="top left")
+                fig.add_vrect(x0=train_end, x1=test_end, fillcolor="rgba(0,0,255,0.1)", layer="below", line_width=0, annotation_text="Testing", annotation_position="top left")
+                fig.add_vrect(x0=forecast_start, x1=forecast_data['Tanggal'].max(), fillcolor="rgba(255,165,0,0.1)", layer="below", line_width=0, annotation_text="Peramalan 2025", annotation_position="top left")
                 fig.add_vline(x=train_end, line_dash="dot", line_color="red", line_width=2)
                 fig.add_vline(x=forecast_start, line_dash="dot", line_color="red", line_width=2)
                 
@@ -1042,76 +1017,51 @@ def main():
                 fig.update_layout(
                     title="Hasil Peramalan Model ARIMAX(2,1,2)-GARCH(1,1)",
                     xaxis_title="Waktu",
-                    yaxis=dict(
-                        title="Harga Minyak Goreng (Rupiah)",
-                        range=[0, None]
-                    ),
+                    yaxis=dict(title="Harga Minyak Goreng (Rupiah)", range=[0, None]),
                     height=600,
                     hovermode="x unified",
-                    legend=dict(
-                        orientation="h",
-                        yanchor="bottom",
-                        y=1.02,
-                        xanchor="right",
-                        x=1
-                    ),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
                     plot_bgcolor='white'
                 )
-
-                fig.add_trace(go.Scatter(
-                    x=[forecast_data['Tanggal'].min()],
-                    y=[0],
-                    mode='markers',
-                    marker=dict(color='rgba(0,0,0,0)'),
-                    showlegend=False,
-                    hoverinfo='skip'
-                ))
-
                 st.plotly_chart(fig, use_container_width=True)
                 
-
-                # Period explanations
+                # Period explanations (tidak berubah)
                 st.markdown("---")
                 st.markdown("""
                 **📋 Legenda:**
-                - **Area Abu-abu (Training):** Periode pelatihan model menggunakan data historis untuk mempelajari pola
-                - **Area Biru (Testing):** Periode pengujian model pada data yang belum pernah dilihat untuk validasi
-                - **Area Oranye (Peramalan):** Periode peramalan untuk tahun 2025 berdasarkan pola yang dipelajari
-                - **Garis Putus-putus Merah:** Pemisah antar periode (Training-Testing dan Testing-2025)
-                - **Area Abu-abu Transparan:** Interval kepercayaan peramalan 95%
+                - **Area Abu-abu (Training):** Periode pelatihan model menggunakan data historis untuk mempelajari pola.
+                - **Area Biru (Testing):** Periode pengujian model pada data yang belum pernah dilihat untuk validasi.
+                - **Area Oranye (Peramalan):** Periode peramalan untuk tahun 2025 berdasarkan pola yang dipelajari.
+                - **Garis Putus-putus Merah:** Pemisah antar periode.
+                - **Area Abu-abu Transparan:** Interval kepercayaan peramalan 95%.
                 """)
-
+    
                 # Summary statistics
                 st.subheader("📊 Ringkasan Hasil Peramalan")
-                
                 if forecast_2025_mask.any():
-                    avg_forecast_2025 = forecast_data.loc[forecast_2025_mask, 'Forecast_2025'].mean()
-                    
+                    avg_forecast_2025 = forecast_data.loc[forecast_2025_mask, 'Peramalan'].mean()
                     col1, col2 = st.columns([1, 2])
-                    
                     with col1:
                         st.markdown(f'''
-                        <div class="metric-box">
-                            <div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 0.2rem; padding: 5; line-height: 1;">Rata-rata Peramalan 2025</div>
-                            <div style="font-size: 2.5rem; font-weight: bold; margin: 0.1rem 0; padding: 5; line-height: 0.9;">Rp {avg_forecast_2025:,.0f}</div>
-                            <div style="font-size: 1.1rem; color: #666; margin-top: 0.1rem; padding: 0; line-height: 1;">per liter per bulan</div>
+                        <div style="background-color: #f0f2f6; border-radius: 8px; padding: 1rem; text-align: center;">
+                            <div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 0.2rem; line-height: 1;">Rata-rata Peramalan 2025</div>
+                            <div style="font-size: 2.5rem; font-weight: bold; margin: 0.1rem 0; line-height: 0.9; color: #28a745;">Rp {avg_forecast_2025:,.0f}</div>
+                            <div style="font-size: 1.1rem; color: #666; margin-top: 0.1rem; line-height: 1;">per liter per bulan</div>
                         </div>
                         ''', unsafe_allow_html=True)
-                    
                     with col2:
                         st.markdown(f'''
-                        <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #28a745; height: 100%;">
                             <p style="text-align: justify; line-height: 1.6; margin: 0;">
                             Berdasarkan hasil peramalan menggunakan model ARIMAX(2,1,2)-GARCH(1,1), 
                             prediksi harga minyak goreng sawit untuk tahun 2025 menunjukkan rata-rata sebesar 
                             <strong>Rp {avg_forecast_2025:,.0f} per liter per bulan</strong>. Model ini telah memperhitungkan 
-                            pengaruh variabel eksogen seperti harga CPO internasional, produksi CPO nasional, 
-                            dan indeks Google Trends, serta volatilitas harga yang dinamis melalui komponen GARCH.
+                            pengaruh variabel eksogen dan volatilitas harga yang dinamis.
                             </p>
                         </div>
                         ''', unsafe_allow_html=True)
-
-
+    
+            # --- PERUBAHAN 3: Logika Tabel Disederhanakan ---
             else:  # Tabel Data
                 st.markdown("##### 📋 Tabel Data Hasil Peramalan")
                 
@@ -1119,16 +1069,16 @@ def main():
                 col1, col2 = st.columns(2)
                 with col1:
                     start_date_table = st.date_input(
-                        "📅 Dari", 
-                        forecast_data['Tanggal'].min(),
+                        "📅 Dari",
+                        forecast_data['Tanggal'].min().date(),
                         min_value=forecast_data['Tanggal'].min().date(),
                         max_value=forecast_data['Tanggal'].max().date(),
                         key="table_start_tab5"
                     )
                 with col2:
                     end_date_table = st.date_input(
-                        "📅 Sampai", 
-                        forecast_data['Tanggal'].max(),
+                        "📅 Sampai",
+                        forecast_data['Tanggal'].max().date(),
                         min_value=forecast_data['Tanggal'].min().date(),
                         max_value=forecast_data['Tanggal'].max().date(),
                         key="table_end_tab5"
@@ -1138,30 +1088,19 @@ def main():
                 filtered_forecast_data = forecast_data[
                     (forecast_data['Tanggal'] >= pd.Timestamp(start_date_table)) & 
                     (forecast_data['Tanggal'] <= pd.Timestamp(end_date_table))
-                ]
+                ].copy()
                 
-                # Create table data
-                table_data = filtered_forecast_data[['Tanggal']].copy()
+                # Membuat tabel data untuk ditampilkan
+                # Kolom 'Hasil Peramalan' sekarang langsung diambil dari 'Peramalan'
+                display_data = pd.DataFrame({
+                    'Periode': filtered_forecast_data['Tanggal'].dt.strftime('%b %Y'),
+                    'Harga Aktual': filtered_forecast_data['Aktual'],
+                    'Hasil Peramalan': filtered_forecast_data['Peramalan'],
+                    'Batas Bawah (95%)': filtered_forecast_data['Batas_Bawah'],
+                    'Batas Atas (95%)': filtered_forecast_data['Batas_Atas']
+                })
                 
-                # Add Harga Aktual
-                table_data['Harga Aktual'] = filtered_forecast_data['Aktual']
-                
-                # Merge Fitted, Forecast Test, and Forecast 2025 into Hasil Peramalan
-                table_data['Hasil Peramalan'] = filtered_forecast_data['Fitted_Train'].fillna(
-                    filtered_forecast_data['Forecast_Test'].fillna(filtered_forecast_data['Forecast_2025'])
-                )
-                
-                # Add confidence interval bounds (only for forecast periods)
-                table_data['Batas Bawah (95%)'] = filtered_forecast_data['Batas_Bawah']
-                table_data['Batas Atas (95%)'] = filtered_forecast_data['Batas_Atas']
-                
-                # Format tanggal untuk display
-                table_data['Periode'] = table_data['Tanggal'].dt.strftime('%b %Y')
-                
-                # Reorder columns
-                display_data = table_data[['Periode', 'Harga Aktual', 'Hasil Peramalan', 'Batas Bawah (95%)', 'Batas Atas (95%)']].copy()
-                
-                # Format numbers to remove decimals for display
+                # Format angka untuk display
                 for col in ['Harga Aktual', 'Hasil Peramalan', 'Batas Bawah (95%)', 'Batas Atas (95%)']:
                     display_data[col] = display_data[col].apply(lambda x: f"{x:,.0f}" if pd.notna(x) else "-")
                 
@@ -1169,19 +1108,18 @@ def main():
                 st.dataframe(display_data, use_container_width=True, hide_index=True)
                 
                 # Download button
-                csv_data = table_data[['Periode', 'Harga Aktual', 'Hasil Peramalan', 'Batas Bawah (95%)', 'Batas Atas (95%)']]
-                csv = csv_data.to_csv(index=False)
+                csv = display_data.to_csv(index=False).encode('utf-8')
                 st.download_button(
-                    "📥 Download Tabel CSV", 
-                    csv, 
-                    f"hasil_peramalan_{datetime.now().strftime('%Y%m%d')}.csv", 
-                    "text/csv"
+                    "📥 Download Tabel CSV",
+                    csv,
+                    f"hasil_peramalan_{datetime.now().strftime('%Y%m%d')}.csv",
+                    "text/csv",
+                    key='download-csv'
                 )
-            
-            
-        
+                
         else:
-            st.error("❌ Data hasil peramalan tidak dapat dimuat.")
+            st.error("❌ Data hasil peramalan tidak dapat dimuat atau kosong.")
+
     
     # Tab Simulasi Peramalan
     with tab6:
