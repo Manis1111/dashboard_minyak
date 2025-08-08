@@ -543,8 +543,8 @@ def main():
         # Model evaluation data - updated with new models
         models_data = {
             'Model': ['ARIMAX-GARCH', 'SVR', 'LSTM'],
-            'RMSE': [1348.69, 6446.93, 4833.33],
-            'MAPE': [5.36, 30.15, 22.77]
+            'RMSE': [1274.79, 6082.47, 4912.50],
+            'MAPE': [4.89, 28.46, 22.95]
         }
         
         df_models = pd.DataFrame(models_data)
@@ -597,8 +597,8 @@ def main():
             
             st.markdown("""
             **🎛️ Hyperparameter Terbaik:**
-            - **SVR**: kernel RBF, C=14, epsilon=0.13 , gamma=scale
-            - **LSTM**: n_units=300, n_past=1, dropout_rate=0.1, learning_rate=0.01, batch_size=8
+            - **SVR**: kernel RBF, C=1, epsilon=0.02 , gamma=scale
+            - **LSTM**: n_units=300, timesteps=1, dropout_rate=0.2, learning_rate=0.0001, batch_size=16
             """)
         
         with col2:
@@ -636,12 +636,18 @@ def main():
                 <h5>🔄 Langkah 1: Data Splitting</h5>
                 <p>Data dibagi menjadi data training (80%) untuk model belajar dan testing (20%) untuk evaluasi model.</p>
             </div>
+
+            <div class="info-panel">
+                <h5>⚖️ Langkah 2: Menyamakan Skala Data</h5>
+                <p>Skala setiap variabel disamakan dengan mengubah nilainya menjadi rentang yang seragam (1 digit), 
+                sehingga model lebih mudah memproses data dan menghindari dominasi variabel dengan skala besar.</p>
+            </div>
             ''', unsafe_allow_html=True)
             
             # ARIMAX Steps
             st.markdown('''
             <div class="info-panel">
-                <h5>📈 Langkah 2: Pemodelan ARIMAX</h5>
+                <h5>📈 Langkah 3: Pemodelan ARIMAX</h5>
                 <ul>
                     <li><strong>Uji Stasioner:</strong> Melakukan uji stasioneritas pada data</li>
                     <li><strong>Differencing:</strong> Jika data tidak stasioner, lakukan differencing</li>
@@ -657,7 +663,7 @@ def main():
             # GARCH Steps  
             st.markdown('''
             <div class="info-panel">
-                <h5>📊 Langkah 3: Pemodelan GARCH</h5>
+                <h5>📊 Langkah 4: Pemodelan GARCH</h5>
                 <ul>
                     <li><strong>Residual ARIMAX:</strong> Ambil residual dari model ARIMAX</li>
                     <li><strong>Uji ARCH-LM:</strong> Test heteroskedastisitas pada residual</li>
@@ -680,14 +686,18 @@ def main():
                 <h5>🔄 Langkah 1: Data Splitting</h5>
                 <p>Data dibagi menjadi data training (80%) untuk model belajar dan testing (20%) untuk evaluasi model.</p>
             </div>
+            <div class="info-panel">
+                <h5>⚖️ Langkah 2: Menyamakan Skala Data</h5>
+                <p>Skala setiap variabel disamakan dengan mengubah nilainya menjadi rentang yang seragam (1 digit), 
+                sehingga model lebih mudah memproses data dan menghindari dominasi variabel dengan skala besar.</p>
+            </div>
             ''', unsafe_allow_html=True)
             
             # SVR Steps
             st.markdown('''
             <div class="info-panel">
-                <h5>🤖 Langkah 2-5: Pemodelan SVR</h5>
+                <h5>🤖 Langkah 3-5: Pemodelan SVR</h5>
                 <ul>
-                    <li><strong>Langkah 2 - Standarisasi Data:</strong> Normalisasi menggunakan Min-Max Scaler untuk meningkatkan performa model</li>
                     <li><strong>Langkah 3 - Tuning Hyperparameter:</strong> Optimasi parameter menggunakan Grid Search:
                         <ul>
                             <li>Kernel: RBF, Polynomial, Linear</li>
@@ -697,8 +707,7 @@ def main():
                             <li>Degree: Menentukan derajat pada kernel Polynomial</li>
                         </ul>
                     </li>
-                    <li><strong>Langkah 3 - Pemodelan:</strong> Training model SVR dengan hyperparameter terbaik</li>
-                    <li><strong>Langkah 4 - Transformasi Balik Data:</strong> Transformasi balik hasil peramalan ke skala asli</li>
+                    <li><strong>Langkah 4 - Pemodelan:</strong> Training model SVR dengan hyperparameter terbaik</li>
                     <li><strong>Langkah 5 - Evaluasi Model:</strong> Hitung RMSE dan MAPE pada data testing</li>
                 </ul>
             </div>
@@ -714,14 +723,19 @@ def main():
                 <h5>🔄 Langkah 1: Data Splitting</h5>
                 <p>Data dibagi menjadi data training (80%) untuk model belajar dan testing (20%) untuk evaluasi model.</p>
             </div>
+
+            <div class="info-panel">
+                <h5>⚖️ Langkah 2: Menyamakan Skala Data</h5>
+                <p>Skala setiap variabel disamakan dengan mengubah nilainya menjadi rentang yang seragam (1 digit), 
+                sehingga model lebih mudah memproses data dan menghindari dominasi variabel dengan skala besar.</p>
+            </div>
             ''', unsafe_allow_html=True)
             
             # LSTM Steps
             st.markdown('''
             <div class="info-panel">
-                <h5>🧠 Langkah 2-5: Pemodelan LSTM</h5>
+                <h5>🧠 Langkah 3-5: Pemodelan LSTM</h5>
                 <ul>
-                    <li><strong>Langkah 2 - Standarisasi Data:</strong> Normalisasi menggunakan Min-Max Scaler untuk stabilitas training</li>
                     <li><strong>Langkah 3 - Tuning Hyperparameter:</strong> Optimasi parameter menggunakan Grid Search:
                         <ul>
                             <li>n_units: Jumlah neuron dalam layer LSTM</li>
@@ -738,8 +752,7 @@ def main():
                             <li>Dense Layer untuk output</li>
                         </ul>
                     </li>
-                    <li><strong>Langkah 5 - Transformasi Balik Data:</strong> Transformasi balik hasil peramalan ke skala asli</li>
-                    <li><strong>Langkah 6 - Evaluasi Model:</strong> Hitung RMSE dan MAPE pada data testing</li>
+                    <li><strong>Langkah 5 - Evaluasi Model:</strong> Hitung RMSE dan MAPE pada data testing</li>
                 </ul>
             </div>
             ''', unsafe_allow_html=True)
@@ -812,7 +825,7 @@ def main():
                 fig_mape.update_traces(texttemplate='%{y:.2f}%', textposition='auto')
                 st.plotly_chart(fig_mape, use_container_width=True)
         
-        st.info("🏆 **ARIMAX(2,1,2)-GARCH(1,1)** menjadi model terbaik dengan RMSE terendah 1348.69 dan MAPE terendah 5.36%. Model ini menggabungkan kemampuan ARIMAX dalam memodelkan pola temporal dengan GARCH untuk memodelkan volatilitas yang berubah-ubah.")
+        st.info("🏆 **ARIMAX(2,1,2)-GARCH(1,1)** menjadi model terbaik dengan RMSE terendah 1274.79 dan MAPE terendah 4.89%. Model ini menggabungkan kemampuan ARIMAX dalam memodelkan pola temporal dengan GARCH untuk memodelkan volatilitas yang berubah-ubah.")
     
         
         # Equation button at the bottom
@@ -838,15 +851,15 @@ def main():
             <div style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); padding: 1.5rem; border-radius: 10px; margin: 1rem 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                 <h5 style="text-align: center; color: #34495e; margin-bottom: 1rem; font-weight: bold;">📊 Persamaan ARIMAX</h5>
                 <div style="text-align: center; font-family: 'Courier New', monospace; font-size: 1rem; line-height: 2; background-color: white; padding: 1rem; border-radius: 8px; border: 2px solid #3498db;">
-                    <strong>HargaMiGor'<sub>t</sub></strong> = 3,817 × Harga_CPO<sub>t-1</sub> - 0,075 × Produksi_CPO<sub>t-4</sub> + 51,295 × IGT<sub>t-1</sub><br>
-                    + 0,817 × HargaMiGor'<sub>t-1</sub> - 0,711 × HargaMiGor'<sub>t-2</sub> - 1,217 × ε<sub>t-1</sub> + 0,777 × ε<sub>t-2</sub>
+                    <strong>HargaMiGor'<sub>t</sub></strong> = 0,3683 × Harga_CPO<sub>t-1</sub> - 0,082 × Produksi_CPO<sub>t-4</sub> + 0,5008 × IGT<sub>t-1</sub><br>
+                    + 0,8264 × HargaMiGor'<sub>t-1</sub> - 0,7522 × HargaMiGor'<sub>t-2</sub> - 1,2095 × ε<sub>t-1</sub> + 0,7940 × ε<sub>t-2</sub>
                 </div>
             </div>
             
             <div style="background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%); padding: 1.5rem; border-radius: 10px; margin: 1rem 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                 <h5 style="text-align: center; color: #2d3436; margin-bottom: 1rem; font-weight: bold;">📈 Persamaan GARCH</h5>
                 <div style="text-align: center; font-family: 'Courier New', monospace; font-size: 1rem; line-height: 2; background-color: white; padding: 1rem; border-radius: 8px; border: 2px solid #e17055;">
-                    <strong>h<sub>t</sub></strong> = 44184 + 0,347 × ε<sub>t-1</sub><sup>2</sup> + 0,505 × h<sub>t-1</sub>
+                    <strong>h<sub>t</sub></strong> = 0,00103 + 0,7835 × ε<sub>t-1</sub><sup>2</sup> + 0,0134 × h<sub>t-1</sub>
                 </div>
             </div>
             
@@ -890,37 +903,8 @@ def main():
                 return data
             except:
                 st.warning("File hasil_plot_semua.xlsx tidak ditemukan. Menggunakan data contoh.")
-                # Create dummy data structure similar to the expected format
-                dates = pd.date_range(start='2012-05-01', end='2025-12-01', freq='MS')
-                np.random.seed(42)
                 
-                dummy_data = pd.DataFrame({
-                    'Tanggal': dates,
-                    'Aktual': np.nan,
-                    'Fitted_Train': np.nan,
-                    'Forecast_Test': np.nan,
-                    'Forecast_2025': np.nan,
-                    'Batas_Atas': np.nan,
-                    'Batas_Bawah': np.nan
-                })
-                
-                # Fill with appropriate dummy values
-                for i in range(len(dummy_data)):
-                    if dummy_data.loc[i, 'Tanggal'] <= pd.Timestamp('2022-05-01'):
-                        # Training period
-                        dummy_data.loc[i, 'Aktual'] = 15000 + np.random.normal(0, 1000)
-                        dummy_data.loc[i, 'Fitted_Train'] = dummy_data.loc[i, 'Aktual'] + np.random.normal(0, 500)
-                    elif dummy_data.loc[i, 'Tanggal'] <= pd.Timestamp('2024-12-01'):
-                        # Testing period
-                        dummy_data.loc[i, 'Aktual'] = 18000 + np.random.normal(0, 2000)
-                        dummy_data.loc[i, 'Forecast_Test'] = dummy_data.loc[i, 'Aktual'] + np.random.normal(0, 800)
-                    else:
-                        # Forecasting 2025
-                        dummy_data.loc[i, 'Forecast_2025'] = 20000 + np.random.normal(0, 500)
-                        dummy_data.loc[i, 'Batas_Atas'] = dummy_data.loc[i, 'Forecast_2025'] + 1000
-                        dummy_data.loc[i, 'Batas_Bawah'] = dummy_data.loc[i, 'Forecast_2025'] - 1000
-                
-                return dummy_data
+                return none
         
         forecast_data = load_forecast_data()
         
